@@ -9,7 +9,6 @@ function getSupabase() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 }
-);
 
 export default function Home() {
   const [nome, setNome] = useState('');

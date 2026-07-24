@@ -21,6 +21,8 @@ export default function Home() {
   const [erro, setErro] = useState('');
   const [jaConfirmouInfo, setJaConfirmouInfo] = useState(null);
   const [checando, setChecando] = useState(false);
+  const [trocandoMimo, setTrocandoMimo] = useState(false);
+  const [mensagemTroca, setMensagemTroca] = useState('');
 
   useEffect(() => {
     async function carregarMimos() {
@@ -36,11 +38,7 @@ export default function Home() {
     const resposta = await fetch(`/api/verificar?whatsapp=${encodeURIComponent(whatsapp)}`);
     const dados = await resposta.json();
     setChecando(false);
-    if (dados.jaConfirmou) {
-      setJaConfirmouInfo(dados);
-    } else {
-      setJaConfirmouInfo(null);
-    }
+    setJaConfirmouInfo(dados.jaConfirmou ? dados : null);
   }
 
   const podeConfirmar =
@@ -56,11 +54,7 @@ export default function Home() {
     const resposta = await fetch('/api/confirmar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        nome,
-        whatsapp,
-        mimoId: mimoSelecionadoId,
-      }),
+      body: JSON.stringify({ nome, whatsapp, mimoId: mimoSelecionadoId }),
     });
     const dados = await resposta.json();
     setEnviando(false);
@@ -71,6 +65,32 @@ export default function Home() {
       setErro('Esse WhatsApp já confirmou presença antes.');
     } else {
       setErro('Algo deu errado, tenta de novo em alguns segundos.');
+    }
+  }
+
+  async function handleTrocarMimo(novoMimoId) {
+    setTrocandoMimo(true);
+    setMensagemTroca('');
+    const resposta = await fetch('/api/trocar-mimo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ whatsapp, novoMimoId }),
+    });
+    const dados = await resposta.json();
+    setTrocandoMimo(false);
+
+    if (resposta.ok) {
+      setJaConfirmouInfo({ jaConfirmou: true, ...dados });
+      const nomeMimo = dados.mimoNome
+        ? dados.mimoNome + (dados.mimoTamanho ? ` (${dados.mimoTamanho})` : '')
+        : 'nenhum mimo';
+      setMensagemTroca(`Tudo certo! Seu mimo agora é: ${nomeMimo}`);
+      const { data } = await getSupabase().from('mimos').select('*').order('id');
+      if (data) setMimos(data);
+    } else if (dados.motivo === 'mimo_indisponivel') {
+      setMensagemTroca('Ih, esse mimo acabou de ser reservado por outra pessoa. Escolhe outro.');
+    } else {
+      setMensagemTroca('Algo deu errado, tenta de novo em alguns segundos.');
     }
   }
 
@@ -139,9 +159,8 @@ export default function Home() {
           onChange={(e) => setWhatsapp(e.target.value)}
           onBlur={checarWhatsapp}
         />
-        {checando && (
-          <p className="section-subtitle" style={{ textAlign: 'left' }}>Verificando...</p>
-        )}
+        {checando && <p className="section-subtitle" style={{ textAlign: 'left' }}>Verificando...</p>}
+
         {jaConfirmouInfo && (
           <div className="item-box unavailable" style={{ opacity: 1, flexDirection: 'column', alignItems: 'flex-start' }}>
             <p className="item-name" style={{ textDecoration: 'none', fontWeight: 700 }}>
@@ -156,6 +175,38 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {jaConfirmouInfo && (
+        <div className="section">
+          <p className="section-title">Quer trocar de mimo?</p>
+          <p className="section-subtitle">Escolha outro item que a gente atualiza pra você</p>
+          {mensagemTroca && (
+            <p style={{ color: '#B8863F', fontSize: 13, textAlign: 'center', marginBottom: 10 }}>
+              {mensagemTroca}
+            </p>
+          )}
+          {mimos.map((mimo) => {
+            const indisponivel = mimo.reserved_qty >= mimo.total_qty;
+            const nomeCompleto = mimo.name + (mimo.size ? ` (${mimo.size})` : '');
+            const eOAtual = jaConfirmouInfo.mimoNome === mimo.name && jaConfirmouInfo.mimoTamanho === mimo.size;
+            return (
+              <div
+                key={mimo.id}
+                className={`item-box ${eOAtual ? 'reserved-by-me' : ''} ${indisponivel && !eOAtual ? 'unavailable' : ''}`}
+              >
+                <p className="item-name">{nomeCompleto}</p>
+                <button
+                  className="item-btn"
+                  disabled={eOAtual || (indisponivel && !eOAtual) || trocandoMimo}
+                  onClick={() => handleTrocarMimo(mimo.id)}
+                >
+                  {eOAtual ? 'Seu mimo atual' : indisponivel ? 'Indisponível' : 'Trocar pra este'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {!jaConfirmouInfo && (
         <>
@@ -188,9 +239,7 @@ export default function Home() {
               return (
                 <div
                   key={mimo.id}
-                  className={`item-box ${selecionadoPorMim ? 'reserved-by-me' : ''} ${
-                    indisponivel ? 'unavailable' : ''
-                  }`}
+                  className={`item-box ${selecionadoPorMim ? 'reserved-by-me' : ''} ${indisponivel ? 'unavailable' : ''}`}
                 >
                   <p className="item-name">
                     {mimo.name}

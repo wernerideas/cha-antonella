@@ -101,4 +101,66 @@ export default function Home() {
       </div>
 
       <div className="section">
-        <p className="section-title">Reserve sua
+        <p className="section-title">Reserve sua fralda</p>
+        <p className="section-subtitle">Cada convidado leva um pacote de fraldas</p>
+        <div className={`item-box ${fraldaSelecionada ? 'reserved-by-me' : ''}`}>
+          <p className="item-name">Pacote de fraldas</p>
+          <button
+            className="item-btn"
+            disabled={fraldaSelecionada}
+            onClick={() => setFraldaSelecionada(true)}
+          >
+            {fraldaSelecionada ? 'Reservado' : 'Reserve sua fralda'}
+          </button>
+        </div>
+        <p className="section-subtitle" style={{ marginTop: 10 }}>
+          Reserve um pacote — a gente te avisa no seu WhatsApp qual tamanho (RN, P, M ou G) e a marca, assim que você confirmar
+        </p>
+      </div>
+
+      <div className="divider" />
+
+      <div className="section">
+        <p className="section-title">Sugestão de mimo</p>
+        <p className="section-subtitle">Cada mimo só pode ser escolhido por uma pessoa</p>
+        {mimos.map((mimo) => {
+          const indisponivel = mimo.reserved_qty >= mimo.total_qty;
+          const selecionadoPorMim = mimoSelecionadoId === mimo.id;
+          return (
+            <div
+              key={mimo.id}
+              className={`item-box ${selecionadoPorMim ? 'reserved-by-me' : ''} ${
+                indisponivel ? 'unavailable' : ''
+              }`}
+            >
+              <p className="item-name">
+                {mimo.name}
+                {mimo.size ? ` (${mimo.size})` : ''}
+              </p>
+              <button
+                className="item-btn"
+                disabled={indisponivel || (mimoSelecionadoId !== null && !selecionadoPorMim)}
+                onClick={() => setMimoSelecionadoId(mimo.id)}
+              >
+                {indisponivel ? 'Indisponível' : selecionadoPorMim ? 'Reservado' : 'Vou levar'}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="section">
+        {erro && (
+          <p style={{ color: '#B8863F', fontSize: 13, textAlign: 'center', marginBottom: 10 }}>
+            {erro}
+          </p>
+        )}
+        <button className="confirm-btn" disabled={!podeConfirmar} onClick={handleConfirmar}>
+          {enviando ? 'Enviando...' : 'Confirmar presença'}
+        </button>
+      </div>
+
+      <p className="footer-note">Sua presença tornará esse dia ainda mais especial</p>
+    </div>
+  );
+}

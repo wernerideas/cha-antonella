@@ -102,6 +102,9 @@ export async function POST(request) {
       resumo += `${nomeCompleto}: ${m.reserved_qty}/${m.total_qty}\n`;
     });
     await enviarWhatsapp(process.env.PAIS_WHATSAPP, resumo);
+      if (process.env.PAIS_WHATSAPP_2) {
+    await enviarWhatsapp(process.env.PAIS_WHATSAPP_2, resumo);
+  }
 
     return Response.json({ ok: true });
   } catch (erro) {

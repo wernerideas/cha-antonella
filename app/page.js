@@ -76,9 +76,17 @@ export default function Home() {
         <p className="name">Antonella</p>
         <p className="datetime">15/08 &bull; 15:00h</p>
         <p className="address">Rua Ver. Dino Gasparin, 129</p>
-        <p className="address" style={{ color: '#000', fontStyle: 'italic' }}>
-          Este site não vende nada, é só uma lista pra organizar quem leva o quê.
-        </p>
+        <div style={{ marginTop: '28px' }}>
+        <p
+          className="address"
+          style={{
+          color: '#000',
+          fontStyle: 'italic',
+    }}
+  >
+    Este site não vende nada, é só uma lista pra organizar quem leva o quê.
+  </p>
+</div>
       </div>
 
       <div className="section">

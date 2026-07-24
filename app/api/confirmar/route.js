@@ -15,7 +15,7 @@ function formatarTelefone(numero) {
 
 async function enviarWhatsapp(telefone, mensagem) {
   const url = `https://api.z-api.io/instances/${process.env.ZAPI_INSTANCE_ID}/token/${process.env.ZAPI_TOKEN}/send-text`;
-  await fetch(url, {
+  const resposta = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -23,22 +23,26 @@ async function enviarWhatsapp(telefone, mensagem) {
       message: mensagem,
     }),
   });
+  const corpo = await resposta.text();
+  console.log('Resposta Z-API:', resposta.status, corpo);
 }
 
 export async function POST(request) {
   try {
     const { nome, whatsapp, mimoId } = await request.json();
     const supabase = getSupabaseAdmin();
-
     const telefoneFormatado = formatarTelefone(whatsapp);
-const { data: existente } = await supabase
-  .from('convidados')
-  .select('id')
-  .eq('whatsapp_formatado', telefoneFormatado)
-  .maybeSingle();
-if (existente) {
-  return Response.json({ ok: false, motivo: 'ja_confirmou' }, { status: 409 });
-}
+
+    // 0. Bloquear se esse WhatsApp já confirmou antes
+    const { data: existente } = await supabase
+      .from('convidados')
+      .select('id')
+      .eq('whatsapp_formatado', telefoneFormatado)
+      .maybeSingle();
+
+    if (existente) {
+      return Response.json({ ok: false, motivo: 'ja_confirmou' }, { status: 409 });
+    }
 
     // 1. Descobrir o próximo tamanho de fralda disponível (RN -> P -> M -> G)
     const { data: fraldas } = await supabase
@@ -82,6 +86,7 @@ if (existente) {
     await supabase.from('convidados').insert({
       nome,
       whatsapp,
+      whatsapp_formatado: telefoneFormatado,
       fralda_size: tamanhoEscolhido,
       mimo_id: mimoId || null,
     });
@@ -112,11 +117,17 @@ if (existente) {
       resumo += `${nomeCompleto}: ${m.reserved_qty}/${m.total_qty}\n`;
     });
     await enviarWhatsapp(process.env.PAIS_WHATSAPP, resumo);
-      if (process.env.PAIS_WHATSAPP_2) {
-    await enviarWhatsapp(process.env.PAIS_WHATSAPP_2, resumo);
-  }
+    if (process.env.PAIS_WHATSAPP_2) {
+      await enviarWhatsapp(process.env.PAIS_WHATSAPP_2, resumo);
+    }
 
-    return Response.json({ ok: true });
+    // 6. Devolver os dados pra tela final mostrar o mesmo resumo
+    return Response.json({
+      ok: true,
+      fraldaSize: tamanhoEscolhido,
+      mimoNome: mimo ? mimo.name : null,
+      mimoTamanho: mimo ? mimo.size : null,
+    });
   } catch (erro) {
     console.error(erro);
     return Response.json({ ok: false }, { status: 500 });

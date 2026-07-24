@@ -136,8 +136,8 @@ export default function Home() {
         <p className="name">Antonella</p>
         <p className="datetime">15/08 &bull; 15:00h</p>
         <p className="address">Rua Ver. Dino Gasparin, 129</p>
-        <p className="address" style={{ color: '#000', fontStyle: 'italic' }}>
-          Este site não vende nada, é só uma lista pra organizar que leva o quê.
+        <p className="address" style={{ color: '#000', fontStyle: 'italic', marginTop: '1em' }}>
+          Este site não vende nada, é só uma lista pra organizar quem leva o quê.
         </p>
       </div>
 
@@ -233,6 +233,7 @@ export default function Home() {
           <div className="section">
             <p className="section-title">Sugestão de mimo</p>
             <p className="section-subtitle">Cada mimo só pode ser escolhido por uma pessoa</p>
+            <p className="section-subtitle">Mudou de ideia? Sem problema — é só voltar aqui com seu WhatsApp numa próxima visita que você troca o mimo</p>
             {mimos.map((mimo) => {
               const indisponivel = mimo.reserved_qty >= mimo.total_qty;
               const selecionadoPorMim = mimoSelecionadoId === mimo.id;

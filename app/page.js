@@ -18,6 +18,7 @@ export default function Home() {
   const [mimoSelecionadoId, setMimoSelecionadoId] = useState(null);
   const [enviando, setEnviando] = useState(false);
   const [confirmado, setConfirmado] = useState(false);
+  const [erro, setErro] = useState('');
 
   useEffect(() => {
     async function carregarMimos() {
@@ -31,11 +32,11 @@ export default function Home() {
     nome.trim() !== '' &&
     whatsapp.trim() !== '' &&
     fraldaSelecionada &&
-    mimoSelecionadoId !== null &&
     !enviando;
 
   async function handleConfirmar() {
     setEnviando(true);
+    setErro('');
     const resposta = await fetch('/api/confirmar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -46,10 +47,11 @@ export default function Home() {
       }),
     });
     setEnviando(false);
+
     if (resposta.ok) {
       setConfirmado(true);
     } else {
-      alert('Algo deu errado, tenta de novo em alguns segundos.');
+      setErro('Algo deu errado, tenta de novo em alguns segundos.');
     }
   }
 
@@ -74,11 +76,14 @@ export default function Home() {
         <p className="name">Antonella</p>
         <p className="datetime">15/08 &bull; 15:00h</p>
         <p className="address">Rua Ver. Dino Gasparin, 129</p>
+        <p className="address" style={{ color: '#000', fontStyle: 'italic' }}>
+          Este site não vende nada, é só uma lista pra organizar que leva o quê.
+        </p>
       </div>
 
       <div className="section">
-        <p className="section-subtitle" style={{ marginBottom: 6 }}>
-          Seus dados
+        <p className="section-subtitle" style={{ marginBottom: 6, fontWeight: 700 }}>
+          Confirmação individual, mesmo pra quem vem acompanhado
         </p>
         <p className="section-subtitle">Preencha antes de reservar seus itens</p>
         <input
@@ -96,58 +101,4 @@ export default function Home() {
       </div>
 
       <div className="section">
-        <p className="section-title">Reserve sua fralda</p>
-        <p className="section-subtitle">Cada convidado leva um pacote de fraldas</p>
-        <div className={`item-box ${fraldaSelecionada ? 'reserved-by-me' : ''}`}>
-          <p className="item-name">Pacote de fraldas</p>
-          <button
-            className="item-btn"
-            disabled={fraldaSelecionada}
-            onClick={() => setFraldaSelecionada(true)}
-          >
-            {fraldaSelecionada ? 'Reservado' : 'Reserve sua fralda'}
-          </button>
-        </div>
-      </div>
-
-      <div className="divider" />
-
-      <div className="section">
-        <p className="section-title">Reserve seu mimo</p>
-        <p className="section-subtitle">Cada mimo só pode ser escolhido por uma pessoa</p>
-        {mimos.map((mimo) => {
-          const indisponivel = mimo.reserved_qty >= mimo.total_qty;
-          const selecionadoPorMim = mimoSelecionadoId === mimo.id;
-          return (
-            <div
-              key={mimo.id}
-              className={`item-box ${selecionadoPorMim ? 'reserved-by-me' : ''} ${
-                indisponivel ? 'unavailable' : ''
-              }`}
-            >
-              <p className="item-name">
-                {mimo.name}
-                {mimo.size ? ` (${mimo.size})` : ''}
-              </p>
-              <button
-                className="item-btn"
-                disabled={indisponivel || (mimoSelecionadoId !== null && !selecionadoPorMim)}
-                onClick={() => setMimoSelecionadoId(mimo.id)}
-              >
-                {indisponivel ? 'Indisponível' : selecionadoPorMim ? 'Reservado' : 'Vou levar'}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="section">
-        <button className="confirm-btn" disabled={!podeConfirmar} onClick={handleConfirmar}>
-          {enviando ? 'Enviando...' : 'Confirmar presença'}
-        </button>
-      </div>
-
-      <p className="footer-note">Sua presença tornará esse dia ainda mais especial</p>
-    </div>
-  );
-}
+        <p className="section-title">Reserve sua

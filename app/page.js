@@ -3,9 +3,12 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+}
 );
 
 export default function Home() {
@@ -19,7 +22,7 @@ export default function Home() {
 
   useEffect(() => {
     async function carregarMimos() {
-      const { data } = await supabase.from('mimos').select('*').order('id');
+      const { data } = await getSupabase().from('mimos').select('*').order('id');
       if (data) setMimos(data);
     }
     carregarMimos();

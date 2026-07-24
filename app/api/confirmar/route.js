@@ -52,33 +52,37 @@ export async function POST(request) {
       .update({ reserved_qty: fraldas.find((f) => f.size === tamanhoEscolhido).reserved_qty + 1 })
       .eq('size', tamanhoEscolhido);
 
-    // 2. Marcar o mimo escolhido como reservado
-    const { data: mimo } = await supabase
-      .from('mimos')
-      .select('*')
-      .eq('id', mimoId)
-      .single();
+    // 2. Marcar o mimo como reservado (só se a pessoa escolheu um)
+    let mimo = null;
+    if (mimoId) {
+      const { data: mimoEncontrado } = await supabase
+        .from('mimos')
+        .select('*')
+        .eq('id', mimoId)
+        .single();
+      mimo = mimoEncontrado;
 
-    await supabase
-      .from('mimos')
-      .update({ reserved_qty: mimo.reserved_qty + 1 })
-      .eq('id', mimoId);
+      await supabase
+        .from('mimos')
+        .update({ reserved_qty: mimo.reserved_qty + 1 })
+        .eq('id', mimoId);
+    }
 
     // 3. Salvar o convidado
     await supabase.from('convidados').insert({
       nome,
       whatsapp,
       fralda_size: tamanhoEscolhido,
-      mimo_id: mimoId,
+      mimo_id: mimoId || null,
     });
 
     // 4. Mandar WhatsApp pro convidado
-    const nomeMimo = mimo.name + (mimo.size ? ` (${mimo.size})` : '');
+    const nomeMimo = mimo ? mimo.name + (mimo.size ? ` (${mimo.size})` : '') : null;
     const mensagemConvidado =
       `Oi, ${nome}! Obrigada por confirmar presença no chá de bebê da Antonella 💛\n\n` +
       `O que você vai trazer:\n` +
       `• Fralda tamanho ${tamanhoEscolhido} (Pampers Premium Care ou Huggies Natural Care)\n` +
-      `• ${nomeMimo}\n\n` +
+      (nomeMimo ? `• ${nomeMimo}\n\n` : `\n`) +
       `Data: 15/08 às 15h\nLocal: Rua Ver. Dino Gasparin, 129\n\nAté lá!`;
     await enviarWhatsapp(whatsapp, mensagemConvidado);
 
@@ -86,7 +90,8 @@ export async function POST(request) {
     const { data: todasFraldas } = await supabase.from('fraldas').select('*').order('size');
     const { data: todosMimos } = await supabase.from('mimos').select('*').order('id');
 
-    let resumo = `Nova confirmação: ${nome} (${whatsapp})\nLevou: fralda ${tamanhoEscolhido} + ${nomeMimo}\n\n`;
+    let resumo = `Nova confirmação: ${nome} (${whatsapp})\nLevou: fralda ${tamanhoEscolhido}` +
+      (nomeMimo ? ` + ${nomeMimo}\n\n` : ` (sem mimo)\n\n`);
     resumo += `--- Fraldas ---\n`;
     todasFraldas.forEach((f) => {
       resumo += `${f.size}: ${f.reserved_qty}/${f.total_qty}\n`;

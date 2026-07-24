@@ -30,6 +30,16 @@ export async function POST(request) {
     const { nome, whatsapp, mimoId } = await request.json();
     const supabase = getSupabaseAdmin();
 
+    const telefoneFormatado = formatarTelefone(whatsapp);
+const { data: existente } = await supabase
+  .from('convidados')
+  .select('id')
+  .eq('whatsapp_formatado', telefoneFormatado)
+  .maybeSingle();
+if (existente) {
+  return Response.json({ ok: false, motivo: 'ja_confirmou' }, { status: 409 });
+}
+
     // 1. Descobrir o próximo tamanho de fralda disponível (RN -> P -> M -> G)
     const { data: fraldas } = await supabase
       .from('fraldas')

@@ -1,3 +1,5 @@
+import './globals.css';
+
 export const metadata = {
   title: "Chá de bebê da Antonella",
   description: "Confirme presença e reserve seu presente",
